@@ -46,7 +46,7 @@ def CreateTemplate(projectId, templateX):
         'range': [], 'key': None, 'provider': None, 'binding': ''}]
     taskId = dnac.configuration_templates.create_template(project_id=projectId, name=templateX, 
         composite=False, deviceTypes=[{'productFamily': 'Switches and Hubs'}], 
-        softwareType="IOS-XE", templateContent=content)
+        templateParams=templateParams, softwareType="IOS-XE", templateContent=content)
     time.sleep(2)
     taskStatus = dnac.task.get_task_by_id(taskId['response']['taskId'])
     if taskStatus['isError'] == True:
@@ -58,7 +58,7 @@ def CreateTemplate(projectId, templateX):
     taskStatus = dnac.task.get_task_by_id(taskId['response']['taskId'])
     if taskStatus['isError'] == True:
         raise Exception (" **** Template Creation FAILED ****")
-    return(taskStatus['response']['data'])
+    return(templateId)
 
 def DeployTemplate(templateId, deviceIp, params):
     targetInfo = [{'id': deviceIp, 'type': "MANAGED_DEVICE_IP", "params": params}]
