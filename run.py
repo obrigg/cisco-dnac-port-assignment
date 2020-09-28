@@ -6,7 +6,7 @@ import time
 from webexteamssdk import WebexTeamsAPI
 from dnacentersdk import api
 from pprint import pprint
-from dnac_config import *
+from dnac_config import DNAC, DNAC_PORT, DNAC_USER, DNAC_PASSWORD
 
 def CheckProject(projectX):
     projects = dnac.configuration_templates.get_projects()
@@ -22,7 +22,7 @@ def CreateProject(projectX):
     taskStatus = dnac.task.get_task_by_id(taskId['response']['taskId'])
     if taskStatus['isError'] == True:
         raise Exception (" **** Project Creation FAILED ****")
-    return(taskStatus['data'])
+    return(taskStatus['response']['data'])
     
 def CheckTemplate(projectId, templateX):
     templates = dnac.configuration_templates.gets_the_templates_available()
@@ -62,18 +62,31 @@ def CreateTemplate(projectId, templateX):
 
 def DeployTemplate(templateId, deviceIp, params):
     targetInfo = [{'id': deviceIp, 'type': "MANAGED_DEVICE_IP", "params": params}]
-    taskId = dnac.configuration_templates.deploy_template(forcePushTemplate=True, 
+    deploymentId = dnac.configuration_templates.deploy_template(forcePushTemplate=True, 
         isComposite=False, templateId=templateId, targetInfo=targetInfo)
     time.sleep(2)
-    taskStatus = dnac.task.get_task_by_id(taskId['response']['taskId'])
+    id = deploymentId["deploymentId"].split()
+    return (id[7])
 
+def IsDeploymentSuccessful(deploymentId):
+    time.sleep(5)
+    results = dnac.configuration_templates.get_template_deployment_status(deployment_id=deploymentId)
+    if results['status'] == "SUCCESS":
+        return(True)
+    else:
+        return(False)
+    
 if __name__ == "__main__":
     # User inputs
     dnac_version = "1.3.3"
     project_name = "Vlan Assignment"
     template_name = "int_vlan"
-    deviceIp = "99.99.99.106"
-    params = {'vlan': '20', 'interface': 'gig1/0/33'}
+    deviceIp = "198.18.128.23"
+    params = {'vlan': 20, 'int': 'gig 1/0/22'}
+    ################################################### dCloud
+    DNAC = '198.18.129.100'
+    DNAC_USER = 'admin'
+    DNAC_PASSWORD = 'C1sco12345'
     # Connecting to DNAC
     dnac = api.DNACenterAPI(username=DNAC_USER,
                             password=DNAC_PASSWORD,
@@ -83,4 +96,8 @@ if __name__ == "__main__":
     #
     projectId = CheckProject(project_name)
     templateId = CheckTemplate(projectId, template_name)
-    DeployTemplate(templateId, deviceIp, params)
+    deploymentId = DeployTemplate(templateId, deviceIp, params)
+    if IsDeploymentSuccessful:
+        print("Sucessfully deployed configuration")
+    else:
+        print("The configuration was not deployed successfully")
