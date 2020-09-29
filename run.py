@@ -2,102 +2,132 @@ __author__ = "Oren Brigg"
 __author_email__ = "obrigg@cisco.com"
 __copyright__ = "Copyright (c) 2020 Cisco Systems, Inc."
 
-import time
 from webexteamssdk import WebexTeamsAPI
-from dnacentersdk import api
 from pprint import pprint
-from dnac_config import DNAC, DNAC_PORT, DNAC_USER, DNAC_PASSWORD
+from flask import Flask, request
+from config import WEBEX_TEAMS_TOKEN, PROXY, AUTH_USERS
+from dnac_functions import *
+import json
 
-def CheckProject(projectX):
-    projects = dnac.configuration_templates.get_projects()
-    for project in projects:
-        if project['name'] == projectX:
-            return (project['id'])
-    # If project does not exist:
-    return(CreateProject(projectX))
-
-def CreateProject(projectX):
-    taskId = dnac.configuration_templates.create_project(name=projectX)
-    time.sleep(2)
-    taskStatus = dnac.task.get_task_by_id(taskId['response']['taskId'])
-    if taskStatus['isError'] == True:
-        raise Exception (" **** Project Creation FAILED ****")
-    return(taskStatus['response']['data'])
-    
-def CheckTemplate(projectId, templateX):
-    templates = dnac.configuration_templates.gets_the_templates_available()
-    for template in templates:
-        if template['name'] == templateX:
-            return (template['templateId'])
-    return(CreateTemplate(projectId, templateX))
-
-def CreateTemplate(projectId, templateX):
-    content = """!
-        interface $int
-        switchport access vlan $vlan
-        """
-    templateParams = [{'parameterName': 'vlan', 'dataType': 'INTEGER', 'defaultValue': None, 
-        'description': None, 'required': True, 'notParam': False, 'paramArray': False, 
-        'displayName': None, 'instructionText': None, 'group': None, 'order': 2, 
-        'selection': None, 'range': [], 'key': None, 'provider': None, 'binding': ''}, 
-        {'parameterName': 'int', 'dataType': 'STRING', 'defaultValue': None, 
-        'description': None, 'required': True, 'notParam': False, 'paramArray': False, 
-        'displayName': None, 'instructionText': None, 'group': None, 'order': 1, 
-        'range': [], 'key': None, 'provider': None, 'binding': ''}]
-    taskId = dnac.configuration_templates.create_template(project_id=projectId, name=templateX, 
-        composite=False, deviceTypes=[{'productFamily': 'Switches and Hubs'}], 
-        templateParams=templateParams, softwareType="IOS-XE", templateContent=content)
-    time.sleep(2)
-    taskStatus = dnac.task.get_task_by_id(taskId['response']['taskId'])
-    if taskStatus['isError'] == True:
-        raise Exception (" **** Template Creation FAILED ****")
-    templateId = taskStatus['response']['data']
-    # Commit the template
-    taskId = dnac.configuration_templates.version_template(templateId=templateId, comments="Initial commit")
-    time.sleep(2)
-    taskStatus = dnac.task.get_task_by_id(taskId['response']['taskId'])
-    if taskStatus['isError'] == True:
-        raise Exception (" **** Template Creation FAILED ****")
-    return(templateId)
-
-def DeployTemplate(templateId, deviceIp, params):
-    targetInfo = [{'id': deviceIp, 'type': "MANAGED_DEVICE_IP", "params": params}]
-    deploymentId = dnac.configuration_templates.deploy_template(forcePushTemplate=True, 
-        isComposite=False, templateId=templateId, targetInfo=targetInfo)
-    time.sleep(2)
-    id = deploymentId["deploymentId"].split()
-    return (id[7])
-
-def IsDeploymentSuccessful(deploymentId):
-    time.sleep(5)
-    results = dnac.configuration_templates.get_template_deployment_status(deployment_id=deploymentId)
-    if results['status'] == "SUCCESS":
-        return(True)
+def ProccessMessage(sender, message):
+    if "list switches" in message.text.lower():
+        RequestSwitchList(sender, message)
+    elif "list ports" in message.text.lower():
+        RequestPortList(sender, message)
+    elif "assign" in message.text.lower():
+        RequestPortAssignment(sender, message)
     else:
-        return(False)
-    
-if __name__ == "__main__":
-    # User inputs
-    dnac_version = "1.3.3"
-    project_name = "Vlan Assignment"
-    template_name = "int_vlan"
-    deviceIp = "198.18.128.23"
-    params = {'vlan': 20, 'int': 'gig 1/0/22'}
-    ################################################### dCloud
-    DNAC = '198.18.129.100'
-    DNAC_USER = 'admin'
-    DNAC_PASSWORD = 'C1sco12345'
-    # Connecting to DNAC
-    dnac = api.DNACenterAPI(username=DNAC_USER,
-                            password=DNAC_PASSWORD,
-                            base_url="https://" + DNAC + ":" + str(DNAC_PORT),
-                            version=dnac_version,
-                            verify=False)
-    #
-    projectId = CheckProject(project_name)
-    templateId = CheckTemplate(projectId, template_name)
-    deploymentId = DeployTemplate(templateId, deviceIp, params)
-    if IsDeploymentSuccessful:
-        print("Sucessfully deployed configuration")
-    else:
-        print("The configuration was not deployed successfully")
+        InvalidInput(sender, message)
+    return("Message received.")
+
+def RequestSwitchList(sender, message):
+    teams.messages.create(roomId=message.roomId, markdown="Fetching the switch list...")
+    switches = GetSwitchList()
+    draft = "{:<30} {:<15}\n".format("Hostname", "IP Address")
+    for switch in switches:
+        draft += "{:<30} {:<15}\n".format(switch['hostname'], switch['managementIpAddress'])
+    teams.messages.create(roomId=message.roomId, text=draft)
+    return("Message received.")
+
+def RequestPortList(sender, message):
+    teams.messages.create(roomId=message.roomId, markdown="Fetching the port list...")
+    textSplit = message.text.split()
+    i = 0
+    isFound = False
+    while i < len(textSplit):
+        if textSplit[i].lower() == "ports" and (len(textSplit)-i == 2):
+            isFound = True
+            switch = textSplit[i+1]
+            ports = GetPortList(switch)
+            if len(ports) == 0:
+                draft = f"The switch {switch} wasn't found.\n"
+                teams.messages.create(roomId=message.roomId, text=draft)
+            else:
+                draft = f"Port list for switch: {switch}\n" + 45*"*" + "\n"
+                for port in ports:
+                    draft += f"{port}\n"
+                teams.messages.create(roomId=message.roomId, text=draft)
+        i += 1
+    if not isFound:
+        InvalidInput(sender, message)
+    return("Message received.")
+
+def RequestPortAssignment(sender, message):
+    teams.messages.create(roomId=message.roomId, markdown="Working on the port assignment...")
+    textSplit = message.text.split()
+    i = 0
+    isAssignmentOk = False
+    while i < len(textSplit):
+        if textSplit[i].lower() == "assign" and (len(textSplit)-i == 4):
+            switch = textSplit[i+1]
+            interface = textSplit[i+2]
+            vlan = textSplit[i+3]
+            # TODO input validation
+            try:
+                isAssignmentOk = PortAssignment(switch, interface, vlan)
+            except:
+                pass
+            if isAssignmentOk:
+                draft = f"Success. Port {interface} on switch {switch} is now assigned to vlan {vlan}"
+                teams.messages.create(roomId=message.roomId, markdown=draft)
+            else:
+                draft = f"Oooops. Something went wrong trying to assign port {interface} on switch {switch} to vlan {vlan}"
+                teams.messages.create(roomId=message.roomId, markdown=draft)
+        i += 1
+    if not isAssignmentOk:
+        draft = "Oooops. Something went wrong..."
+        teams.messages.create(roomId=message.roomId, markdown=draft)
+    return("Message received.")
+
+def InvalidInput(sender, message):
+    draft  = f"Hi {sender.nickName}\n"
+    draft += "I didn't quite understand what you wrote.. I know that you're quite busy, so let's cut to the chase.\n"
+    draft += f"I can help you assign switch ports to vlans. Use one of the following options:\n"
+    draft += f"1. **Assign `switch IP` `interface` `vlan`** - to assign as interface to a vlan\n"
+    draft += f"2. **List switches** - to get a list of available switches\n"
+    draft += f"3. **List ports `switch hostname` (or `switch IP`)** - to get a list of ports on a given switch\n"
+    teams.messages.create(roomId=message.roomId, markdown=draft)
+    return("Message received.")
+
+def InvalidUser(sender, message):
+    draft  = f"Hi {sender.displayName},\n"
+    draft += f"I'd call you {sender.nickName}, but we don't really know each other.\n"
+    draft += f"This is quite awkward... but I'm not allowed to talk with strangers...\n"
+    draft += f"I can't help you. But here's some kittens videos: https://www.youtube.com/results?search_query=kittens\n"
+    teams.messages.create(roomId=message.roomId, markdown=draft)
+    return("Message received.")
+
+app = Flask(__name__)
+
+@app.route('/', methods=['GET'])
+def mainPage():
+    return("cisco-dnac-port-association -> by Oren Brigg (obrigg@cisco.com)")
+
+@app.route('/', methods=['POST'])
+def index():
+    """
+    When messages come in from the webhook, they are processed here. 
+    The message text is parsed.  If an expected command is found in the message,
+    further actions are taken.
+    """
+    webhook = json.loads(request.data.decode("utf-8"))
+    message = teams.messages.get(webhook['data']['id'])
+    sender = teams.people.get(personId=message.personId)
+    isAuthUser = False
+    for email in sender.emails:
+        if email in AUTH_USERS:
+            isAuthUser = True
+            return(ProccessMessage(sender, message))
+        if email in bot.emails:
+            isAuthUser = True
+            return("BOT")
+    if not isAuthUser:
+        return(InvalidUser(sender, message))
+
+if __name__ == '__main__':
+    # Initialize Webex Teams API
+    teams = WebexTeamsAPI(access_token=WEBEX_TEAMS_TOKEN) #, proxies=PROXY)
+    bot = teams.people.me()
+    # teams.webhooks.create(name="DNAC Bot", targetUrl="https://f7f9b8ee1fb2.ngrok.io", resource="messages", event="all")
+
+    app.run(host="0.0.0.0", port=5000, threaded=True, debug=False)

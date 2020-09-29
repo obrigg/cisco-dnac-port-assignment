@@ -2,3 +2,6 @@
 dnac-port-assignment.code-workspace
 Pipfile.lock
 __pycache__/dnac_config.cpython-37.pyc
+__pycache__/config.cpython-37.pyc
+__pycache__/dnac_functions.cpython-37.pyc
+__pycache__/run.cpython-37.pyc
