@@ -117,7 +117,7 @@ def index():
     for email in sender.emails:
         if email in AUTH_USERS:
             isAuthUser = True
-            print(f"\n\tReceived the following message from \033[1;32;40m{sender.displayName}: ''{message.text}''\n\033[0m 0;37;48m")
+            print(f"\n\tReceived the following message from \033[1;32;40m{sender.displayName}: '{message.text}'\n\033[0m 0;37;48m")
             return(ProccessMessage(sender, message))
         if email in bot.emails:
             isAuthUser = True
@@ -129,6 +129,11 @@ if __name__ == '__main__':
     # Initialize Webex Teams API
     teams = WebexTeamsAPI(access_token=WEBEX_TEAMS_TOKEN) #, proxies=PROXY)
     bot = teams.people.me()
-    # teams.webhooks.create(name="DNAC Bot", targetUrl="https://4b3e643d965e.ngrok.io", resource="messages", event="all")
-
+    # Clearing old webhooks and creating a new one
+    webhooks = teams.webhooks.list()
+    for webhook in webhooks:
+        teams.webhooks.delete(webhook.id)
+    webhook = input("Kindly enter the ngrok URL we'll be using (don't forget the 'https://' part): ")
+    teams.webhooks.create(name="DNAC Bot", targetUrl=webhook, resource="messages", event="all")
+    # Run the Flask app
     app.run(host="0.0.0.0", port=5000, threaded=True, debug=False)
