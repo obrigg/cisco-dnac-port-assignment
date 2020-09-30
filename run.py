@@ -43,7 +43,7 @@ def RequestPortList(sender, message):
                 draft = f"The switch {switch} wasn't found.\n"
                 teams.messages.create(roomId=message.roomId, text=draft)
             else:
-                draft = f"Port list for switch: {switch}\n" + 45*"*" + "\n"
+                draft = f"Port list for switch: {switch}\n" + 60*"*" + "\n"
                 for port in ports:
                     draft += f"{port}\n"
                 teams.messages.create(roomId=message.roomId, text=draft)
@@ -83,9 +83,9 @@ def InvalidInput(sender, message):
     draft  = f"Hi {sender.nickName}\n"
     draft += "I didn't quite understand what you wrote.. I know that you're quite busy, so let's cut to the chase.\n"
     draft += f"I can help you assign switch ports to vlans. Use one of the following options:\n"
-    draft += f"1. **Assign `switch IP` `interface` `vlan`** - to assign as interface to a vlan\n"
-    draft += f"2. **List switches** - to get a list of available switches\n"
-    draft += f"3. **List ports `switch hostname` (or `switch IP`)** - to get a list of ports on a given switch\n"
+    draft += f"1. **List switches** - to get a list of available switches\n"
+    draft += f"2. **List ports `switch hostname` (or `switch IP`)** - to get a list of ports on a given switch\n"
+    draft += f"3. **Assign `switch IP` `interface` `vlan`** - to assign as interface to a vlan\n"
     teams.messages.create(roomId=message.roomId, markdown=draft)
     return("Message received.")
 
@@ -106,7 +106,7 @@ def mainPage():
 @app.route('/', methods=['POST'])
 def index():
     """
-    When messages come in from the webhook, they are processed here. 
+    When messages come in from the webhook, they are processed here.
     The message text is parsed.  If an expected command is found in the message,
     further actions are taken.
     """
@@ -117,6 +117,7 @@ def index():
     for email in sender.emails:
         if email in AUTH_USERS:
             isAuthUser = True
+            print(f"\n\tReceived the following message from \033[1;32;40m{sender.displayName}: ''{message.text}''\n\033[0m 0;37;48m")
             return(ProccessMessage(sender, message))
         if email in bot.emails:
             isAuthUser = True
@@ -128,6 +129,6 @@ if __name__ == '__main__':
     # Initialize Webex Teams API
     teams = WebexTeamsAPI(access_token=WEBEX_TEAMS_TOKEN) #, proxies=PROXY)
     bot = teams.people.me()
-    # teams.webhooks.create(name="DNAC Bot", targetUrl="https://f7f9b8ee1fb2.ngrok.io", resource="messages", event="all")
+    # teams.webhooks.create(name="DNAC Bot", targetUrl="https://4b3e643d965e.ngrok.io", resource="messages", event="all")
 
     app.run(host="0.0.0.0", port=5000, threaded=True, debug=False)

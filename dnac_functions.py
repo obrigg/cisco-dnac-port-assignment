@@ -23,13 +23,17 @@ def GetPortList(switchX):
                             version=DNAC_VERSION,
                             verify=False)
     switches = GetSwitchList()
-    ports = []
+    ports = ["{:<30}{:<15}{:<21}{:<15}".format("Interface Name", "Admin", "Operational", "Vlan ID")]
     for switch in switches:
         if (switch['hostname'].lower() == switchX.lower()) or (switch['managementIpAddress'] == switchX):
-            interfaces = dnac.devices.get_device_interfaces_by_specified_range(device_id=switch['id'], records_to_return=500, start_index=1)['response']
+            interfaces = dnac.devices.get_device_interfaces_by_specified_range(device_id=switch['id'],
+                records_to_return=500, start_index=1)['response']
             for interface in interfaces:
                 if interface['portType'] == 'Ethernet Port':
-                    ports.append(interface['portName'])
+                    if interface['vlanId'] == None:
+                        interface['vlanId'] = ""
+                    port = "{:<30}{:<15}{:^21}{:^15}".format(interface['portName'], interface['adminStatus'], interface['status'], interface['vlanId'])
+                    ports.append(port)
     return(ports)
 
 def PortAssignment(deviceIp, interfaces, vlan):
@@ -60,7 +64,7 @@ def CreateProject(projectX):
     if taskStatus['isError'] == True:
         raise Exception (" **** Project Creation FAILED ****")
     return(taskStatus['response']['data'])
-    
+
 def CheckTemplate(projectId, templateX):
     templates = dnac.configuration_templates.gets_the_templates_available()
     for template in templates:
@@ -73,16 +77,16 @@ def CreateTemplate(projectId, templateX):
         interface $int
         switchport access vlan $vlan
         """
-    templateParams = [{'parameterName': 'vlan', 'dataType': 'INTEGER', 'defaultValue': None, 
-        'description': None, 'required': True, 'notParam': False, 'paramArray': False, 
-        'displayName': None, 'instructionText': None, 'group': None, 'order': 2, 
-        'selection': None, 'range': [], 'key': None, 'provider': None, 'binding': ''}, 
-        {'parameterName': 'int', 'dataType': 'STRING', 'defaultValue': None, 
-        'description': None, 'required': True, 'notParam': False, 'paramArray': False, 
-        'displayName': None, 'instructionText': None, 'group': None, 'order': 1, 
+    templateParams = [{'parameterName': 'vlan', 'dataType': 'INTEGER', 'defaultValue': None,
+        'description': None, 'required': True, 'notParam': False, 'paramArray': False,
+        'displayName': None, 'instructionText': None, 'group': None, 'order': 2,
+        'selection': None, 'range': [], 'key': None, 'provider': None, 'binding': ''},
+        {'parameterName': 'int', 'dataType': 'STRING', 'defaultValue': None,
+        'description': None, 'required': True, 'notParam': False, 'paramArray': False,
+        'displayName': None, 'instructionText': None, 'group': None, 'order': 1,
         'range': [], 'key': None, 'provider': None, 'binding': ''}]
-    taskId = dnac.configuration_templates.create_template(project_id=projectId, name=templateX, 
-        composite=False, deviceTypes=[{'productFamily': 'Switches and Hubs'}], 
+    taskId = dnac.configuration_templates.create_template(project_id=projectId, name=templateX,
+        composite=False, deviceTypes=[{'productFamily': 'Switches and Hubs'}],
         templateParams=templateParams, softwareType="IOS-XE", templateContent=content)
     time.sleep(2)
     taskStatus = dnac.task.get_task_by_id(taskId['response']['taskId'])
@@ -99,7 +103,7 @@ def CreateTemplate(projectId, templateX):
 
 def DeployTemplate(templateId, deviceIp, params):
     targetInfo = [{'id': deviceIp, 'type': "MANAGED_DEVICE_IP", "params": params}]
-    deploymentId = dnac.configuration_templates.deploy_template(forcePushTemplate=True, 
+    deploymentId = dnac.configuration_templates.deploy_template(forcePushTemplate=True,
         isComposite=False, templateId=templateId, targetInfo=targetInfo)
     time.sleep(2)
     id = deploymentId["deploymentId"].split()
@@ -112,9 +116,8 @@ def IsDeploymentSuccessful(deploymentId):
         return(True)
     else:
         return(False)
-    
+
 #if __name__ == "__main__":
     # User inputs
     # deviceIp = "198.18.128.23" # Get from user
     # params = {'vlan': 20, 'int': 'gig 1/0/22'} # Get from user
-    
