@@ -36,7 +36,7 @@ def GetPortList(switchX):
                     ports.append(port)
     return(ports)
 
-def PortAssignment(deviceIp, interfaces, vlan):
+def PortAssignment(deviceIp, interface, vlan):
     # Connecting to DNAC
     global dnac
     dnac = api.DNACenterAPI(username=DNAC_USER,
@@ -45,8 +45,13 @@ def PortAssignment(deviceIp, interfaces, vlan):
                             version=DNAC_VERSION,
                             verify=False)
     projectId = CheckProject(project_name)
+    print(f"\t\033[1;37;40mProject Id: {projectId}\033[0m")
     templateId = CheckTemplate(projectId, template_name)
+    print(f"\t\033[1;37;40mTemplate Id: {templateId}\033[0m")
+    params = {'vlan': vlan, 'int': interface}
+    print(f"\t\033[1;37;40mParameters: {params}\033[0m")
     deploymentId = DeployTemplate(templateId, deviceIp, params)
+    print(f"\t\033[1;37;40mDeployment Id: {deploymentId}\033[0m")
     return(IsDeploymentSuccessful)
 
 def CheckProject(projectX):
@@ -77,7 +82,7 @@ def CreateTemplate(projectId, templateX):
         interface $int
         switchport access vlan $vlan
         """
-    templateParams = [{'parameterName': 'vlan', 'dataType': 'INTEGER', 'defaultValue': None,
+    templateParams = [{'parameterName': 'vlan', 'dataType': 'STRING', 'defaultValue': None,
         'description': None, 'required': True, 'notParam': False, 'paramArray': False,
         'displayName': None, 'instructionText': None, 'group': None, 'order': 2,
         'selection': None, 'range': [], 'key': None, 'provider': None, 'binding': ''},

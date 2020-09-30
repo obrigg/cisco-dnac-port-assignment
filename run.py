@@ -59,19 +59,22 @@ def RequestPortAssignment(sender, message):
     isAssignmentOk = False
     while i < len(textSplit):
         if textSplit[i].lower() == "assign" and (len(textSplit)-i == 4):
-            switch = textSplit[i+1]
+            switchX = textSplit[i+1]
             interface = textSplit[i+2]
             vlan = textSplit[i+3]
             # TODO input validation
-            try:
-                isAssignmentOk = PortAssignment(switch, interface, vlan)
-            except:
-                pass
+            switches = GetSwitchList()
+            for switch in switches:
+                if (switch['hostname'].lower() == switchX.lower()) or (switch['managementIpAddress'] == switchX):
+                    try:
+                        isAssignmentOk = PortAssignment(switch['managementIpAddress'], interface, vlan)
+                    except:
+                        pass
             if isAssignmentOk:
-                draft = f"Success. Port {interface} on switch {switch} is now assigned to vlan {vlan}"
+                draft = f"Success. Port {interface} on switch {switch['hostname']} is now assigned to vlan {vlan}"
                 teams.messages.create(roomId=message.roomId, markdown=draft)
             else:
-                draft = f"Oooops. Something went wrong trying to assign port {interface} on switch {switch} to vlan {vlan}"
+                draft = f"Oooops. Something went wrong trying to assign port {interface} on switch {switch['hostname']} to vlan {vlan}"
                 teams.messages.create(roomId=message.roomId, markdown=draft)
         i += 1
     if not isAssignmentOk:
@@ -117,7 +120,7 @@ def index():
     for email in sender.emails:
         if email in AUTH_USERS:
             isAuthUser = True
-            print(f"\n\tReceived the following message from \033[1;32;40m{sender.displayName}: '{message.text}'\n\033[0m 0;37;48m")
+            print(f"\n\tReceived the following message from \033[1;32;40m{sender.displayName}: '{message.text}'\n\033[0m")
             return(ProccessMessage(sender, message))
         if email in bot.emails:
             isAuthUser = True
@@ -126,6 +129,8 @@ def index():
         return(InvalidUser(sender, message))
 
 if __name__ == '__main__':
+    # DNAC details
+    print(f"\nUsing Cisco DNAC Center: \033[1;32;40m {DNAC} \033[0m with user: \033[1;32;40m {DNAC_USER} \033[0m \n")
     # Initialize Webex Teams API
     teams = WebexTeamsAPI(access_token=WEBEX_TEAMS_TOKEN) #, proxies=PROXY)
     bot = teams.people.me()
