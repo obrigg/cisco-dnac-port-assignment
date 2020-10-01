@@ -22,10 +22,13 @@ def ProccessMessage(sender, message):
 
 def RequestSwitchList(sender, message):
     teams.messages.create(roomId=message.roomId, markdown="Fetching the switch list...")
-    switches = GetSwitchList()
-    draft = "{:<30} {:<15}\n".format("Hostname", "IP Address")
-    for switch in switches:
-        draft += "{:<30} {:<15}\n".format(switch['hostname'], switch['managementIpAddress'])
+    try:
+        switches = GetSwitchList()
+        draft = "{:<30} {:<15}\n".format("Hostname", "IP Address")
+        for switch in switches:
+            draft += "{:<30} {:<15}\n".format(switch['hostname'], switch['managementIpAddress'])
+    except:
+            draft = f"Oooops. Something went wrong trying to get the list of switches"
     teams.messages.create(roomId=message.roomId, text=draft)
     return("Message received.")
 
@@ -129,12 +132,28 @@ def index():
         return(InvalidUser(sender, message))
 
 if __name__ == '__main__':
-    # DNAC details
+    # Initialize Cisco DNA Center
     print(f"\nUsing Cisco DNAC Center: \033[1;32;40m {DNAC} \033[0m with user: \033[1;32;40m {DNAC_USER} \033[0m \n")
+    try:
+        dnac = api.DNACenterAPI(username=DNAC_USER,
+                                password=DNAC_PASSWORD,
+                                base_url="https://" + DNAC + ":" + str(DNAC_PORT),
+                                version=DNAC_VERSION,
+                                verify=False)
+    except:
+        print("\t\033[1;31;40m ERROR: Failed to initialize Cisco DNA Center\033[0m")
+    # Make sure Cisco DNA Center has a network profile/project/templates configured
+    # TODO ^^^
+    projectId = CheckProject(project_name)
+    templateId = CheckTemplate(projectId, template_name)
+    # TODO CheckNetworkProfile(profile_name)
     # Initialize Webex Teams API
-    teams = WebexTeamsAPI(access_token=WEBEX_TEAMS_TOKEN) #, proxies=PROXY)
-    bot = teams.people.me()
-    # Clearing old webhooks and creating a new one
+    try:
+        teams = WebexTeamsAPI(access_token=WEBEX_TEAMS_TOKEN) #, proxies=PROXY)
+        bot = teams.people.me()
+    except:
+        print("\t\033[1;31;40m ERROR: Failed to initialize Webex Teams bot\033[0m")
+    # Clear old webhooks and create a new one
     webhooks = teams.webhooks.list()
     for webhook in webhooks:
         teams.webhooks.delete(webhook.id)

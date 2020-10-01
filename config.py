@@ -9,7 +9,8 @@ PROXY = {'https': 'http://proxy.if.relevant.com:80'}
 AUTH_USERS = ['obrigg@cisco.com', 'rcsapo@cisco.com', 'eyelbaz@cisco.com']
 
 project_name = "Vlan Assignment"
-template_name = "Int_Vlan"
+template_name = "Int_Vlan_template"
+profile_name = "Int_Vlan_profile"
 
 ################################################### dCloud
 # DNAC = '198.18.129.100'

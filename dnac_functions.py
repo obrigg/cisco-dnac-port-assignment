@@ -8,6 +8,8 @@ from pprint import pprint
 from config import DNAC, DNAC_PORT, DNAC_USER, DNAC_PASSWORD, DNAC_VERSION, project_name, template_name
 
 def GetSwitchList():
+    # Connecting to DNAC
+    global dnac
     dnac = api.DNACenterAPI(username=DNAC_USER,
                             password=DNAC_PASSWORD,
                             base_url="https://" + DNAC + ":" + str(DNAC_PORT),
@@ -17,6 +19,8 @@ def GetSwitchList():
     return(switches['response'])
 
 def GetPortList(switchX):
+    # Connecting to DNAC
+    global dnac
     dnac = api.DNACenterAPI(username=DNAC_USER,
                             password=DNAC_PASSWORD,
                             base_url="https://" + DNAC + ":" + str(DNAC_PORT),
@@ -55,6 +59,13 @@ def PortAssignment(deviceIp, interface, vlan):
     return(IsDeploymentSuccessful)
 
 def CheckProject(projectX):
+    # Connecting to DNAC
+    global dnac
+    dnac = api.DNACenterAPI(username=DNAC_USER,
+                            password=DNAC_PASSWORD,
+                            base_url="https://" + DNAC + ":" + str(DNAC_PORT),
+                            version=DNAC_VERSION,
+                            verify=False)
     projects = dnac.configuration_templates.get_projects()
     for project in projects:
         if project['name'] == projectX:
@@ -71,6 +82,13 @@ def CreateProject(projectX):
     return(taskStatus['response']['data'])
 
 def CheckTemplate(projectId, templateX):
+    # Connecting to DNAC
+    global dnac
+    dnac = api.DNACenterAPI(username=DNAC_USER,
+                            password=DNAC_PASSWORD,
+                            base_url="https://" + DNAC + ":" + str(DNAC_PORT),
+                            version=DNAC_VERSION,
+                            verify=False)
     templates = dnac.configuration_templates.gets_the_templates_available()
     for template in templates:
         if template['name'] == templateX:
@@ -122,7 +140,24 @@ def IsDeploymentSuccessful(deploymentId):
     else:
         return(False)
 
-#if __name__ == "__main__":
-    # User inputs
-    # deviceIp = "198.18.128.23" # Get from user
-    # params = {'vlan': 20, 'int': 'gig 1/0/22'} # Get from user
+def CheckNetworkProfile(profileX):
+    # TODO
+    # Connecting to DNAC
+    global dnac
+    dnac = api.DNACenterAPI(username=DNAC_USER,
+                            password=DNAC_PASSWORD,
+                            base_url="https://" + DNAC + ":" + str(DNAC_PORT),
+                            version=DNAC_VERSION,
+                            verify=False)
+    return(CreateNetworkProfile(profileX))
+
+def CreateNetworkProfile(profileX):
+    # TODO
+    # Connecting to DNAC
+    global dnac
+    dnac = api.DNACenterAPI(username=DNAC_USER,
+                            password=DNAC_PASSWORD,
+                            base_url="https://" + DNAC + ":" + str(DNAC_PORT),
+                            version=DNAC_VERSION,
+                            verify=False)
+    pass
