@@ -10,6 +10,7 @@ dnacentersdk = "*"
 webexteamssdk = "*"
 pylint = "*"
 flask = "*"
+requests = "*"
 
 [requires]
 python_version = "3.7"

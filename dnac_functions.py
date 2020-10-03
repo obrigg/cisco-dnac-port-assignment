@@ -6,6 +6,8 @@ import time
 from dnacentersdk import api
 from pprint import pprint
 from config import DNAC, DNAC_PORT, DNAC_USER, DNAC_PASSWORD, DNAC_VERSION, project_name, template_name
+import requests
+requests.packages.urllib3.disable_warnings()
 
 def GetSwitchList():
     # Connecting to DNAC
@@ -139,25 +141,3 @@ def IsDeploymentSuccessful(deploymentId):
         return(True)
     else:
         return(False)
-
-def CheckNetworkProfile(profileX):
-    # TODO
-    # Connecting to DNAC
-    global dnac
-    dnac = api.DNACenterAPI(username=DNAC_USER,
-                            password=DNAC_PASSWORD,
-                            base_url="https://" + DNAC + ":" + str(DNAC_PORT),
-                            version=DNAC_VERSION,
-                            verify=False)
-    return(CreateNetworkProfile(profileX))
-
-def CreateNetworkProfile(profileX):
-    # TODO
-    # Connecting to DNAC
-    global dnac
-    dnac = api.DNACenterAPI(username=DNAC_USER,
-                            password=DNAC_PASSWORD,
-                            base_url="https://" + DNAC + ":" + str(DNAC_PORT),
-                            version=DNAC_VERSION,
-                            verify=False)
-    pass

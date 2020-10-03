@@ -7,6 +7,7 @@ from pprint import pprint
 from flask import Flask, request
 from config import WEBEX_TEAMS_TOKEN, PROXY, AUTH_USERS
 from dnac_functions import *
+from dnac_private_functions import *
 import json
 
 def ProccessMessage(sender, message):
@@ -143,10 +144,14 @@ if __name__ == '__main__':
     except:
         print("\t\033[1;31;40m ERROR: Failed to initialize Cisco DNA Center\033[0m")
     # Make sure Cisco DNA Center has a network profile/project/templates configured
-    # TODO ^^^
     projectId = CheckProject(project_name)
+    print(f"Project Name: {project_name} \tProject ID: {projectId}")
     templateId = CheckTemplate(projectId, template_name)
-    # TODO CheckNetworkProfile(profile_name)
+    print(f"Template Name: {template_name} \tTemplate ID: {templateId}")
+    profileId = CheckNetworkProfile(templateId)
+    print(f"Network Profile Name: {profile_name} \tNetwork Profile ID: {profileId}")
+    AssociateProfileToAllSites(profileId)
+    print("All sites are associated with the network profile")
     # Initialize Webex Teams API
     try:
         teams = WebexTeamsAPI(access_token=WEBEX_TEAMS_TOKEN) #, proxies=PROXY)
