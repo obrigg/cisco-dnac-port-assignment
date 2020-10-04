@@ -21,7 +21,7 @@ def CreateDiscovery():
     taskId = dnac.discovery.start_discovery(name="dcloud", discoveryType="Range", 
         ipAddressList="198.18.128.23-198.18.128.24", snmpROCommunity="ro", 
         snmpRWCommunity="rw", protocolOrder="SSH", userNameList=[dcloud_user], 
-        passwordList=[dcloud_password])
+        passwordList=[dcloud_password], enablePasswordList=[dcloud_password])
     taskStatus = dnac.task.get_task_by_id(taskId['response']['taskId'])
     if taskStatus['isError'] == True:
         raise Exception (" **** Discovery task Creation FAILED ****")
