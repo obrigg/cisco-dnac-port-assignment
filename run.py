@@ -145,11 +145,11 @@ if __name__ == '__main__':
         print("\t\033[1;31;40m ERROR: Failed to initialize Cisco DNA Center\033[0m")
     # Make sure Cisco DNA Center has a network profile/project/templates configured
     projectId = CheckProject(project_name)
-    print(f"Project Name: {project_name} \tProject ID: {projectId}")
+    print(f"Project Name: {project_name} \t\t\tProject ID: {projectId}")
     templateId = CheckTemplate(projectId, template_name)
-    print(f"Template Name: {template_name} \tTemplate ID: {templateId}")
+    print(f"Template Name: {template_name} \t\tTemplate ID: {templateId}")
     profileId = CheckNetworkProfile(templateId)
-    print(f"Network Profile Name: {profile_name} \tNetwork Profile ID: {profileId}")
+    print(f"Network Profile Name: {profile_name} \t\tNetwork Profile ID: {profileId}")
     AssociateProfileToAllSites(profileId)
     print("All sites are associated with the network profile")
     # Initialize Webex Teams API

@@ -1,3 +1,5 @@
 flask
 dnacentersdk
 webexteamssdk
+requests
+netmiko
