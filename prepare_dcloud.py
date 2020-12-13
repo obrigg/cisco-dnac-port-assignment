@@ -1,4 +1,4 @@
-# If using dCloud's "Cisco Enterprise Networks Hardware Sandbox v1" 
+# If using dCloud's "Cisco Enterprise Networks Hardware Sandbox v1"
 # lab - this script will prepare the switches for discovery
 # and discover them
 
@@ -18,10 +18,11 @@ def ConfigureDevice(switches):
             cmd_verify=False)
 
 def CreateDiscovery():
-    taskId = dnac.discovery.start_discovery(name="dcloud", discoveryType="Range", 
-        ipAddressList="198.18.128.23-198.18.128.24", snmpROCommunity="ro", 
-        snmpRWCommunity="rw", protocolOrder="SSH", userNameList=[dcloud_user], 
-        passwordList=[dcloud_password], enablePasswordList=[dcloud_password])
+    taskId = dnac.discovery.start_discovery(name="dcloud", discoveryType="Range",
+        ipAddressList="198.18.128.23-198.18.128.24", snmpROCommunity="ro",
+        snmpRWCommunity="rw", protocolOrder="SSH", userNameList=[dcloud_user],
+        passwordList=[dcloud_password], enablePasswordList=[dcloud_password],
+        snmpVersion="2c")
     taskStatus = dnac.task.get_task_by_id(taskId['response']['taskId'])
     if taskStatus['isError'] == True:
         raise Exception (" **** Discovery task Creation FAILED ****")
@@ -59,17 +60,17 @@ dcloud_building =   {"type": "building",
                         "address": "Netanya"}}}
 
 print("\tConfiguring SNMP on the switches")
-C9300 = {"device_type":"cisco_xe", 
+C9300 = {"device_type":"cisco_xe",
         "host":"198.18.128.23",
-        "username": dcloud_user, 
-        "password": dcloud_password, 
+        "username": dcloud_user,
+        "password": dcloud_password,
         "secret": dcloud_password,
         "port" : 22
         }
-C3850 = {"device_type":"cisco_xe", 
+C3850 = {"device_type":"cisco_xe",
         "host":"198.18.128.24",
-        "username": dcloud_user, 
-        "password": dcloud_password, 
+        "username": dcloud_user,
+        "password": dcloud_password,
         "secret": dcloud_password,
         "port" : 22
         }
