@@ -9,11 +9,11 @@ import json
 
 
 def ProccessMessage(message):
-    if "list switches" in message.text.lower():
+    if "list switches" in message.lower():
         RequestSwitchList(message)
-    elif "list ports" in message.text.lower():
+    elif "list ports" in message.lower():
         RequestPortList(message)
-    elif "assign" in message.text.lower():
+    elif "assign" in message.lower():
         RequestPortAssignment(message)
     else:
         InvalidInput(message)
@@ -33,7 +33,7 @@ def RequestSwitchList():
 
 def RequestPortList(message):
     print("Fetching the port list...")
-    textSplit = message.text.split()
+    textSplit = message.split()
     i = 0
     isFound = False
     while i < len(textSplit):
@@ -54,7 +54,7 @@ def RequestPortList(message):
         InvalidInput(message)
 
 
-def RequestPortAssignment(sender, message):
+def RequestPortAssignment(message):
     print("Working on the port assignment...")
     textSplit = message.text.split()
     i = 0
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     print("All sites are associated with the network profile")
 
     while True:
-        draft  = f"Hello\n"
+        draft  = f"\n\n\n\n\nHello\n"
         draft += f"I can help you assign switch ports to vlans. Use one of the following options:\n"
         draft += f"1. **List switches** - to get a list of available switches\n"
         draft += f"2. **List ports `switch hostname` (or `switch IP`)** - to get a list of ports on a given switch\n"
